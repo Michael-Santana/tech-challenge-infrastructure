@@ -1,0 +1,79 @@
+name: Validate infrastructure
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/validate-infrastructure.yml"
+      - "terraform/**"
+      - "scripts/**"
+      - "README.md"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/validate-infrastructure.yml"
+      - "terraform/**"
+      - "scripts/**"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Install Kind
+        run: |
+          curl --fail --silent --show-error --location \
+            https://kind.sigs.k8s.io/dl/v0.26.0/kind-linux-amd64 \
+            --output /tmp/kind
+          chmod +x /tmp/kind
+          sudo mv /tmp/kind /usr/local/bin/kind
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive terraform
+
+      - name: Initialize Terraform
+        working-directory: terraform
+        run: terraform init
+
+      - name: Validate Terraform
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Create ephemeral Kind cluster
+        working-directory: terraform
+        run: terraform apply -target=kind_cluster.tech_challenge -auto-approve -var="cluster_name=tech-challenge-ci"
+
+      - name: Select Kind kubeconfig
+        run: kind export kubeconfig --name tech-challenge-ci
+
+      - name: Install local persistent volume support
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.31/deploy/local-path-storage.yaml
+          kubectl patch storageclass local-path --type=merge -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+          kubectl wait --for=condition=Available deployment/local-path-provisioner -n local-path-storage --timeout=2m
+
+      - name: Apply infrastructure
+        working-directory: terraform
+        run: terraform apply -auto-approve -var="cluster_name=tech-challenge-ci"
+
+      - name: Check deployed platform resources
+        run: |
+          kubectl wait --for=condition=Ready pods --all -n os-service --timeout=10m
+          kubectl wait --for=condition=Ready pods --all -n billing-service --timeout=10m
+          kubectl wait --for=condition=Ready pods --all -n execution-service --timeout=10m
+          kubectl wait --for=condition=Ready pods --all -n messaging --timeout=10m
+          kubectl wait --for=condition=Ready pods --all -n observability --timeout=10m
+
+      - name: Destroy Terraform-managed resources
+        if: always()
+        working-directory: terraform
+        run: terraform destroy -auto-approve -var="cluster_name=tech-challenge-ci"
