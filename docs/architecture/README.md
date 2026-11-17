@@ -14,6 +14,8 @@ Decisoes implementadas estao separadas de propostas ainda abertas.
 
 ## Documentos
 
+- [Resumo em PDF](architecture-overview.pdf): visão executiva diagramada,
+  derivada deste índice Markdown.
 - [Visao arquitetural e diagramas](architecture.md): componentes, contexto de
   infraestrutura, autenticacao como implementada e abertura de OS/Saga.
 - [Modelo de dados e justificativa](data-model.md): justificativa dos bancos,
