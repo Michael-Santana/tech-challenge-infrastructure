@@ -84,4 +84,10 @@ Prometheus e Grafana fornecem a base de métricas e painéis para o cluster. Os 
 
 O workflow `Validate infrastructure` formata e valida o Terraform, provisiona a infraestrutura em um cluster Kind efêmero e verifica que os recursos de mensageria e observabilidade ficam prontos. Os pipelines de build, testes, cobertura, análise de qualidade e deploy devem permanecer independentes nos repositórios de cada microsserviço.
 
+O check `Validar infraestrutura` é executado em todos os PRs e em pushes para
+`main` ou `feature/**`, sem filtro de arquivos. Configure no GitHub a proteção
+de `main` para exigir pull request e esse check após o workflow estar disponível
+no PR. O cluster Kind é temporário: essa validação não implanta infraestrutura em
+um ambiente Kubernetes externo nem substitui os deploys dos microsserviços.
+
 Configure a proteção da branch `main` nas definições do GitHub para exigir pull request e o workflow de validação. Essa regra é configurada no GitHub e não pode ser aplicada pelo Terraform local deste repositório. As imagens dos microsserviços e seus manifestos não estão aqui porque dependem dos repositórios e nomes de imagem de cada serviço.
