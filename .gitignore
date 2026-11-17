@@ -1,0 +1,12 @@
+# Terraform local state and downloaded providers
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Local variable files may contain credentials
+*.tfvars
+!terraform.tfvars.example
+

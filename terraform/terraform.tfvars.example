@@ -1,0 +1,4 @@
+cluster_name            = "tech-challenge"
+kubernetes_node_image   = "kindest/node:v1.31.0"
+postgresql_storage_size = "2Gi"
+mongodb_storage_size    = "2Gi"
