@@ -7,12 +7,14 @@ responsavel por seu modelo e banco; nao ha transacao distribuida nem foreign
 keys entre bancos. A comunicacao de dominio e principalmente por RabbitMQ.
 Billing tambem consulta sincronamente o estado da OS e o provedor de pagamento.
 
-AWS e o provedor escolhido para a futura implantacao; Amazon EKS e a opcao-alvo
-para os workloads Kubernetes. O Terraform atual cria somente um cluster local
-Kind com tres nos para validar a plataforma: ainda nao provisiona conta,
-recursos AWS ou EKS. Os workflows de CI/CD dos servicos esperam um cluster
-Kubernetes externo, configurado por `KUBE_CONFIG`; rede, entrada publica, TLS,
-DNS e estrategia de backup desse ambiente ainda nao estao implementados.
+AWS e o provedor de nuvem adotado e o cluster Amazon EKS ja esta provisionado e
+em uso. O Terraform versionado neste repositorio cria, separadamente, um cluster
+local Kind com tres nos para validar a plataforma; ele nao gerencia o EKS
+existente. Os workflows de CI/CD dos servicos estao configurados para direcionar
+deploys ao cluster AWS externo por `KUBE_CONFIG`; a configuracao de secrets e a
+execucao bem-sucedida dos deploys nao foram verificadas aqui. Topologia de rede,
+entrada publica, TLS, DNS e estrategia de backup nao estao descritos nos
+repositorios analisados.
 
 ## Diagrama de componentes
 
@@ -24,7 +26,7 @@ flowchart TB
     GH["GitHub Actions<br/>CI, GHCR e deploy via kubeconfig"]
   end
 
-  subgraph k8s["Futuro cluster Kubernetes na AWS (EKS ainda nao provisionado)"]
+  subgraph k8s["AWS — cluster Amazon EKS provisionado e em uso"]
     subgraph osns["Namespace os-service"]
       OSAPI["OS Service<br/>REST :8081 /api/v1"]
       OSPG[("PostgreSQL<br/>ordens, outbox, inbox")]
@@ -70,10 +72,12 @@ flowchart TB
   PROM --> GRAF
 ```
 
-O desenho de Ingress/Gateway e apenas uma lacuna/necessidade de ambiente, nao um
-recurso provisionado. `Service` e `ClusterIP` nos manifestos dos servicos; nao
-foi encontrado um recurso Ingress. AWS e a provedora escolhida, mas nao ha ainda
-recursos AWS implementados nos manifestos/Terraform desta branch.
+O desenho de Ingress/Gateway e apenas uma lacuna nos manifestos dos servicos,
+nao uma afirmacao sobre a topologia externa ja operada. `Service` e `ClusterIP`
+nos manifestos dos servicos; nao foi encontrado um recurso Ingress nesses
+repositorios. A infraestrutura AWS/EKS esta provisionada fora do Terraform
+versionado aqui; seus componentes de rede/entrada devem ser documentados a
+partir da configuracao operacional AWS.
 
 ### Monitoramento observado
 

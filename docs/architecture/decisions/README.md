@@ -86,27 +86,28 @@ registrada como ADR-004 abaixo; detalhes de implementacao continuam pendentes.
 
 ### ADR-004 — AWS como provedor de nuvem
 
-- **Status:** Aceito — decisao de plataforma; infraestrutura AWS ainda nao
-  implementada nos repositorios.
-- **Decisao:** AWS e o provedor de nuvem escolhido para a futura implantacao do
-  sistema. Para hospedar os workloads Kubernetes, Amazon EKS e a opcao-alvo a
-  avaliar/implementar, mantendo Kind para validacao local e efemera.
-- **Contexto:** o Terraform atual provisiona Kind, nao recursos AWS. Os workflows
-  dos servicos recebem um kubeconfig de cluster externo. Portanto, esta decisao
-  direciona a evolucao, mas nao significa que exista conta, cluster EKS, VPC,
-  ingress, DNS, TLS ou storage AWS provisionados.
+- **Status:** Implementado operacionalmente — AWS/EKS provisionado e em uso;
+  os recursos nao sao gerenciados pelos arquivos Terraform deste repositorio.
+- **Decisao:** AWS e o provedor de nuvem adotado e Amazon EKS hospeda os
+  workloads Kubernetes. Kind permanece como ambiente local e efemero de
+  validacao.
+- **Contexto:** o Terraform versionado aqui provisiona Kind. Os workflows dos
+  servicos recebem `KUBE_CONFIG` para acessar o cluster externo AWS/EKS. A
+  topologia e a configuracao operacional AWS nao estao descritas nos repositorios
+  analisados.
 - **Alternativas consideradas:** Azure Kubernetes Service, Google Kubernetes
   Engine, Kubernetes autogerenciado em maquinas virtuais e manter apenas Kind.
 - **Motivacao:** padronizar o provedor de nuvem conforme decisao do projeto e
   utilizar um servico Kubernetes gerenciado para reduzir a operacao do control
   plane. A escolha de EKS mantem compatibilidade com os manifests Kubernetes e
   com o deploy existente via `kubectl`.
-- **Consequencias:** a infraestrutura futura devera definir contas/ambientes,
-  regioes, VPC/subnets, conectividade privada dos runners, identidade IAM,
-  armazenamento persistente, observabilidade, backups, custos e politicas de
-  seguranca. Atualizar Terraform e workflows antes de considerar AWS como
-  ambiente de deploy operacional.
-- **Pendencias de implementacao:** selecionar regiao e estrategia de rede,
-  provisionar EKS e storage classes, configurar IAM/IRSA ou mecanismo equivalente,
-  secrets e acesso do GitHub Actions, Ingress/ALB, DNS/TLS, backups e plano de
-  recuperacao.
+- **Consequencias:** AWS/EKS e o ambiente de deploy adotado; Kind continua
+  isolado para validacao local/CI. A manutencao dos recursos AWS e feita fora do
+  Terraform deste repositorio. Manter a configuracao operacional, acesso IAM,
+  conectividade dos runners, armazenamento, backups e politicas de seguranca
+  documentados e controlados no ambiente AWS.
+- **Pendencias documentais:** registrar neste ou em repositorio operacional
+  autorizado a regiao, VPC/subnets, estrategia de entrada (Ingress/ALB), DNS/TLS,
+  storage classes, identidade do GitHub Actions, backups e recuperacao. Esses
+  itens nao invalidam o estado implementado de AWS/EKS; sao detalhes de
+  topologia/operação nao inferidos a partir do codigo atual.
