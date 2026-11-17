@@ -14,6 +14,8 @@ Decisoes implementadas estao separadas de propostas ainda abertas.
 
 ## Documentos
 
+- [Documentação arquitetural completa em PDF](architecture-complete.pdf):
+  visão, diagramas, modelo de dados, RFCs e ADRs.
 - [Resumo em PDF](architecture-overview.pdf): visão executiva diagramada,
   derivada deste índice Markdown.
 - [Visao arquitetural e diagramas](architecture.md): componentes, contexto de
