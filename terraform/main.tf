@@ -46,6 +46,16 @@ resource "random_password" "os_database" {
   special = false
 }
 
+resource "random_password" "os_history_database" {
+  length  = 32
+  special = false
+}
+
+resource "random_password" "os_history_root" {
+  length  = 32
+  special = false
+}
+
 resource "random_password" "billing_database" {
   length  = 32
   special = false
@@ -130,6 +140,41 @@ resource "helm_release" "billing_database" {
         limits = {
           memory = "512Mi"
         }
+      }
+    }
+  })]
+
+  depends_on = [kubernetes_namespace_v1.platform]
+}
+
+resource "helm_release" "os_history_database" {
+  name       = "os-mongodb"
+  repository = "oci://registry-1.docker.io/bitnamicharts"
+  chart      = "mongodb"
+  version    = "16.5.26"
+  namespace  = "os-service"
+
+  values = [yamlencode({
+    architecture = "standalone"
+    auth = {
+      enabled      = true
+      rootUser     = "root"
+      rootPassword = random_password.os_history_root.result
+      usernames    = ["os_service"]
+      passwords    = [random_password.os_history_database.result]
+      databases    = ["os_service_history"]
+    }
+    persistence = {
+      enabled = true
+      size    = var.mongodb_storage_size
+    }
+    resources = {
+      requests = {
+        cpu    = "100m"
+        memory = "256Mi"
+      }
+      limits = {
+        memory = "768Mi"
       }
     }
   })]

@@ -7,6 +7,7 @@ Infraestrutura local como código para os microsserviços de Ordem de Serviço, 
 | Componente | Namespace | Uso |
 | --- | --- | --- |
 | PostgreSQL dedicado | `os-service` | Banco exclusivo do OS Service |
+| MongoDB dedicado | `os-service` | Historico de eventos do OS Service |
 | PostgreSQL dedicado | `billing-service` | Banco exclusivo do Billing Service |
 | MongoDB dedicado | `execution-service` | Banco exclusivo do Execution Service |
 | RabbitMQ | `messaging` | Transporte assíncrono de eventos entre serviços |
@@ -20,6 +21,7 @@ Os deployments dos serviços devem usar as credenciais provisionadas como Kubern
 | Serviço | Conexão de banco | Secret/credencial |
 | --- | --- | --- |
 | OS | `os-postgresql.os-service.svc.cluster.local:5432`, database/user `os_service` | Secret `os-postgresql`, chave `password` |
+| OS historico | `os-mongodb.os-service.svc.cluster.local:27017`, database `os_service_history`, user `os_service` | Secret `os-mongodb`, chave `mongodb-passwords` |
 | Billing | `billing-postgresql.billing-service.svc.cluster.local:5432`, database/user `billing_service` | Secret `billing-postgresql`, chave `password` |
 | Execução | `execution-mongodb.execution-service.svc.cluster.local:27017`, database/user `execution_service` | Secret `execution-mongodb`, chave `mongodb-passwords` |
 | Todos | `rabbitmq.messaging.svc.cluster.local:5672` | Secret `rabbitmq-credentials` no namespace do serviço; chaves `username` e `password` |
@@ -27,6 +29,7 @@ Os deployments dos serviços devem usar as credenciais provisionadas como Kubern
 ```mermaid
 flowchart LR
   OS[OS Service] -->|PostgreSQL exclusivo| OSDB[(os-service)]
+  OS -->|MongoDB exclusivo para historico| OSH[(os-service-history)]
   BILL[Billing Service] -->|PostgreSQL exclusivo| BILLDB[(billing-service)]
   EXEC[Execution Service] -->|MongoDB exclusivo| EXECDB[(execution-service)]
   OS <--> MQ[RabbitMQ]
@@ -73,7 +76,7 @@ O estado local do Terraform contém credenciais e é ignorado pelo Git. Não con
 
 O RabbitMQ fornece a mensageria necessária à integração desacoplada. A estratégia escolhida é uma Saga coreografada: cada serviço participante reage a eventos e executa sua própria etapa e compensação, sem coordenador central. A escolha favorece o desacoplamento entre serviços e reaproveita a mensageria já prevista. Os contratos podem ser documentados nos repositórios existentes; um repositório exclusivo não é obrigatório.
 
-O fluxo previsto é abertura da OS, diagnóstico, orçamento, aprovação, pagamento e reparos. O pagamento confirmado é requisito para iniciar os reparos. Uma falha definitiva após o pagamento exige bloqueio dos reparos e registro para estorno manual; os demais cenários de compensação precisam ser definidos e implementados. Use outbox/inbox e consumidores idempotentes para evitar perda ou duplicidade de eventos. A infraestrutura não implementa a Saga: a integração e as compensações ainda precisam ser concluídas nos microsserviços.
+O fluxo previsto é abertura da OS, diagnóstico, orçamento, aprovação, pagamento e reparos. Após o diagnóstico, a oficina informa os itens e valores do orçamento por uma API. A rejeição do orçamento deve cancelar a OS e impedir os reparos. O pagamento confirmado é requisito para iniciar os reparos. Uma falha definitiva após o pagamento exige bloqueio dos reparos e registro para estorno manual; os demais cenários de compensação precisam ser definidos e implementados. Use outbox/inbox e consumidores idempotentes para evitar perda ou duplicidade de eventos. A infraestrutura não implementa a Saga: a integração e as compensações ainda precisam ser concluídas nos microsserviços.
 
 Prometheus e Grafana fornecem a base de métricas e painéis para o cluster. Os serviços devem expor métricas e configurar seus próprios `ServiceMonitor`/`PodMonitor`; rastreamento distribuído via OpenTelemetry deve ser integrado à ferramenta de tracing já adotada na Fase 3, pois a configuração desse ambiente não está neste repositório.
 
