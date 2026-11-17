@@ -26,7 +26,7 @@ configuracao existente nem decisao aprovada.
 |---|---|
 | Orquestracao distribuida | Saga coreografada por eventos RabbitMQ, com outbox nos servicos OS e Billing e eventos pendentes no documento de Execution. |
 | Bancos | PostgreSQL para OS e Billing; MongoDB para historico OS e estado/execucao. Bancos separados por servico. |
-| Nuvem/cluster | Nenhum provedor de nuvem de producao selecionado no Terraform. A validacao cria cluster Kind efemero; os workflows de servico esperam um cluster externo via `KUBE_CONFIG`. |
+| Nuvem/cluster | AWS escolhida como provedora-alvo; EKS e a opcao-alvo para Kubernetes. Ainda nao provisionado: Terraform cria Kind efemero para validacao e workflows esperam cluster externo via `KUBE_CONFIG`. |
 | Autenticacao | Billing protege `/budgets` por `X-API-Key`; webhook Mercado Pago valida assinatura. OS e Execution nao implementam autenticacao de usuario nas APIs examinadas. |
 | Monitoramento | Terraform instala kube-prometheus-stack. Billing tem anotacoes de scrape e Execution tem `ServiceMonitor`; cobertura de descoberta nao e uniforme. |
 | Autoscaling | HPA nao encontrado. Deployments estao em replicas fixas, com requests/limits parciais. |

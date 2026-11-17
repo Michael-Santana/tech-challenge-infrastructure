@@ -1,6 +1,6 @@
 # Tech Challenge - infraestrutura compartilhada
 
-Infraestrutura local como código para os microsserviços de Ordem de Serviço, Billing e Execução. O ambiente usa Kind, Terraform e Helm e foi pensado para desenvolvimento e demonstração; não representa uma configuração pronta para produção.
+Infraestrutura como código para os microsserviços de Ordem de Serviço, Billing e Execução. AWS foi escolhida como provedora para a futura implantação (Amazon EKS é a opção-alvo para Kubernetes), mas esta configuração Terraform ainda usa Kind para desenvolvimento, demonstração e validação efêmera; não provisiona recursos AWS nem representa uma configuração pronta para produção.
 
 ## Documentação arquitetural
 

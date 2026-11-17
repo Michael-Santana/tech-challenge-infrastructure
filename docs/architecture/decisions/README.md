@@ -7,26 +7,8 @@ para producao.
 
 ## RFCs
 
-### RFC-001 — Provedor e topologia Kubernetes
-
-- **Status:** Aberto — provedor de producao nao selecionado.
-- **Contexto:** `terraform/main.tf` cria cluster Kind local, adequado a teste
-  efemero. Os workflows dos tres servicos fazem deploy para cluster externo
-  recebido por `KUBE_CONFIG`. Nenhum provider cloud, VPC, Ingress, DNS, TLS,
-  backup ou configuracao de runner com conectividade privada e definido.
-- **Alternativas:** manter cluster Kubernetes proprio; adotar Kubernetes
-  gerenciado (por exemplo EKS, AKS ou GKE); manter Kind somente para CI e escolher
-  posteriormente um ambiente gerenciado.
-- **Recomendacao para avaliacao:** manter Kind como ambiente efemero de validacao
-  e escolher um servico Kubernetes gerenciado antes do primeiro deploy
-  produtivo. Comparar custo, regiao/latencia, disponibilidade, identidade do
-  runner, armazenamento persistente, backups, observabilidade e experiencia
-  operacional. Nao assumir AWS, Azure ou GCP ate aprovacao explicita.
-- **Consequencias:** atualmente o ambiente de CI nao e ambiente produtivo e o
-  deploy automatizado depende de cluster, acesso de rede e `KUBE_CONFIG`
-  provisionados externamente.
-- **Decisao pendente:** provedor, regiao, estrategia de rede/entrada, storage
-  classes, HA, backup e gerenciamento de segredos.
+Nao ha RFCs de escolha de provedor abertas neste momento. A decisao de nuvem foi
+registrada como ADR-004 abaixo; detalhes de implementacao continuam pendentes.
 
 ### RFC-002 — Identidade e autenticacao de APIs
 
@@ -101,3 +83,30 @@ para producao.
   disponibilidade ficam limitadas aos replicas fixos. Implementar HPA requer
   metricas alvo, limites min/max, testes de carga e compatibilidade de
   consumidores RabbitMQ.
+
+### ADR-004 — AWS como provedor de nuvem
+
+- **Status:** Aceito — decisao de plataforma; infraestrutura AWS ainda nao
+  implementada nos repositorios.
+- **Decisao:** AWS e o provedor de nuvem escolhido para a futura implantacao do
+  sistema. Para hospedar os workloads Kubernetes, Amazon EKS e a opcao-alvo a
+  avaliar/implementar, mantendo Kind para validacao local e efemera.
+- **Contexto:** o Terraform atual provisiona Kind, nao recursos AWS. Os workflows
+  dos servicos recebem um kubeconfig de cluster externo. Portanto, esta decisao
+  direciona a evolucao, mas nao significa que exista conta, cluster EKS, VPC,
+  ingress, DNS, TLS ou storage AWS provisionados.
+- **Alternativas consideradas:** Azure Kubernetes Service, Google Kubernetes
+  Engine, Kubernetes autogerenciado em maquinas virtuais e manter apenas Kind.
+- **Motivacao:** padronizar o provedor de nuvem conforme decisao do projeto e
+  utilizar um servico Kubernetes gerenciado para reduzir a operacao do control
+  plane. A escolha de EKS mantem compatibilidade com os manifests Kubernetes e
+  com o deploy existente via `kubectl`.
+- **Consequencias:** a infraestrutura futura devera definir contas/ambientes,
+  regioes, VPC/subnets, conectividade privada dos runners, identidade IAM,
+  armazenamento persistente, observabilidade, backups, custos e politicas de
+  seguranca. Atualizar Terraform e workflows antes de considerar AWS como
+  ambiente de deploy operacional.
+- **Pendencias de implementacao:** selecionar regiao e estrategia de rede,
+  provisionar EKS e storage classes, configurar IAM/IRSA ou mecanismo equivalente,
+  secrets e acesso do GitHub Actions, Ingress/ALB, DNS/TLS, backups e plano de
+  recuperacao.

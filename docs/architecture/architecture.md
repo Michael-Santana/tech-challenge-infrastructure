@@ -7,11 +7,12 @@ responsavel por seu modelo e banco; nao ha transacao distribuida nem foreign
 keys entre bancos. A comunicacao de dominio e principalmente por RabbitMQ.
 Billing tambem consulta sincronamente o estado da OS e o provedor de pagamento.
 
-O Terraform atual cria um cluster local Kind com tres nos para validar a
-plataforma. Ele nao provisiona uma conta AWS, Azure, GCP ou um cluster gerenciado.
-Os workflows de CI/CD dos servicos esperam um cluster Kubernetes externo,
-configurado por `KUBE_CONFIG`; provedor, rede, entrada publica, TLS, DNS e
-estrategia de backup desse ambiente nao estao definidos neste repositorio.
+AWS e o provedor escolhido para a futura implantacao; Amazon EKS e a opcao-alvo
+para os workloads Kubernetes. O Terraform atual cria somente um cluster local
+Kind com tres nos para validar a plataforma: ainda nao provisiona conta,
+recursos AWS ou EKS. Os workflows de CI/CD dos servicos esperam um cluster
+Kubernetes externo, configurado por `KUBE_CONFIG`; rede, entrada publica, TLS,
+DNS e estrategia de backup desse ambiente ainda nao estao implementados.
 
 ## Diagrama de componentes
 
@@ -23,7 +24,7 @@ flowchart TB
     GH["GitHub Actions<br/>CI, GHCR e deploy via kubeconfig"]
   end
 
-  subgraph k8s["Cluster Kubernetes (provedor de producao nao definido)"]
+  subgraph k8s["Futuro cluster Kubernetes na AWS (EKS ainda nao provisionado)"]
     subgraph osns["Namespace os-service"]
       OSAPI["OS Service<br/>REST :8081 /api/v1"]
       OSPG[("PostgreSQL<br/>ordens, outbox, inbox")]
@@ -71,7 +72,8 @@ flowchart TB
 
 O desenho de Ingress/Gateway e apenas uma lacuna/necessidade de ambiente, nao um
 recurso provisionado. `Service` e `ClusterIP` nos manifestos dos servicos; nao
-foi encontrado um recurso Ingress. A nuvem nao e especificada pelo codigo.
+foi encontrado um recurso Ingress. AWS e a provedora escolhida, mas nao ha ainda
+recursos AWS implementados nos manifestos/Terraform desta branch.
 
 ### Monitoramento observado
 
