@@ -2,6 +2,13 @@
 
 Infraestrutura local como código para os microsserviços de Ordem de Serviço, Billing e Execução. O ambiente usa Kind, Terraform e Helm e foi pensado para desenvolvimento e demonstração; não representa uma configuração pronta para produção.
 
+## Documentação arquitetural
+
+Consulte [`docs/architecture/`](docs/architecture/README.md) para os diagramas
+de componentes e sequencia, RFCs/ADRs e justificativa dos bancos e modelos de
+dados. O material separa o que esta implementado das decisoes de producao ainda
+pendentes.
+
 ## O que é provisionado
 
 | Componente | Namespace | Uso |
@@ -35,9 +42,9 @@ flowchart LR
   OS <--> MQ[RabbitMQ]
   BILL <--> MQ
   EXEC <--> MQ
-  PROM[Prometheus] -->|coleta métricas| OS
-  PROM -->|coleta métricas| BILL
-  PROM -->|coleta métricas| EXEC
+  PROM[Prometheus] -.->|descoberta do OS nao configurada no Deployment| OS
+  PROM -.->|anotacoes de scrape| BILL
+  PROM -.->|ServiceMonitor| EXEC
   GRAF[Grafana] --> PROM
 ```
 
@@ -76,9 +83,24 @@ O estado local do Terraform contém credenciais e é ignorado pelo Git. Não con
 
 O RabbitMQ fornece a mensageria necessária à integração desacoplada. A estratégia escolhida é uma Saga coreografada: cada serviço participante reage a eventos e executa sua própria etapa e compensação, sem coordenador central. A escolha favorece o desacoplamento entre serviços e reaproveita a mensageria já prevista. Os contratos podem ser documentados nos repositórios existentes; um repositório exclusivo não é obrigatório.
 
-O fluxo previsto é abertura da OS, diagnóstico, orçamento, aprovação, pagamento e reparos. Após o diagnóstico, a oficina informa os itens e valores do orçamento por uma API. A rejeição do orçamento deve cancelar a OS e impedir os reparos. O pagamento confirmado é requisito para iniciar os reparos. Uma falha definitiva após o pagamento exige bloqueio dos reparos e registro para estorno manual; os demais cenários de compensação precisam ser definidos e implementados. Use outbox/inbox e consumidores idempotentes para evitar perda ou duplicidade de eventos. A infraestrutura não implementa a Saga: a integração e as compensações ainda precisam ser concluídas nos microsserviços.
+O fluxo implementado inicia com abertura da OS; o evento `ORDER_CREATED` e
+criado pela outbox e recebido pelo Execution Service. A oficina inicia/encerra o
+diagnostico, informa o orcamento pela API Billing, registra aprovacao e checkout;
+o Billing confirma o pagamento via webhook Mercado Pago e publica o evento para
+Execution. A rejeicao cancela a execucao. Falhas definitivas posteriores ao
+pagamento registram necessidade de estorno manual (`refundRequired`), sem
+executar o reembolso automaticamente. OS e Billing usam outbox; OS registra
+inbox, Execution deduplica IDs processados e RabbitMQ envia falhas repetidas para
+DLQ. Esses mecanismos reduzem perda/duplicidade, mas nao eliminam a necessidade
+de reconciliacao e testes de integracao. A infraestrutura provisiona o broker;
+a coreografia e as compensacoes sao implementadas nos microsservicos.
 
-Prometheus e Grafana fornecem a base de métricas e painéis para o cluster. Os serviços devem expor métricas e configurar seus próprios `ServiceMonitor`/`PodMonitor`; rastreamento distribuído via OpenTelemetry deve ser integrado à ferramenta de tracing já adotada na Fase 3, pois a configuração desse ambiente não está neste repositório.
+Prometheus e Grafana fornecem a base de métricas e painéis para o cluster.
+Execution declara `ServiceMonitor`; Billing usa anotacoes de scrape no pod; OS
+expoe Actuator/Prometheus, mas seu Deployment nao declara mecanismo equivalente
+de descoberta. A coleta nao e uniforme. Rastreamento distribuido via
+OpenTelemetry deve ser integrado a ferramenta de tracing adotada na Fase 3,
+pois a configuracao desse ambiente nao esta neste repositorio.
 
 ## CI e limites deste repositório
 
