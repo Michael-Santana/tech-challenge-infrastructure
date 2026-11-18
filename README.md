@@ -1,6 +1,6 @@
 # Tech Challenge - infraestrutura compartilhada
 
-Infraestrutura como código para os microsserviços de Ordem de Serviço, Billing e Execução. AWS foi escolhida como provedora para a futura implantação (Amazon EKS é a opção-alvo para Kubernetes), mas esta configuração Terraform ainda usa Kind para desenvolvimento, demonstração e validação efêmera; não provisiona recursos AWS nem representa uma configuração pronta para produção.
+Infraestrutura como código para os microsserviços de Ordem de Serviço, Billing e Execução. O ambiente AWS com Amazon EKS já está provisionado e em uso. Este repositório mantém também um ambiente Kind local e efêmero para desenvolvimento, demonstração e validação; o Terraform aqui versionado provisiona esse ambiente de validação, não gerencia os recursos AWS existentes.
 
 ## Documentação arquitetural
 
@@ -9,7 +9,7 @@ de componentes e sequencia, RFCs/ADRs e justificativa dos bancos e modelos de
 dados. O material separa o que esta implementado das decisoes de producao ainda
 pendentes.
 
-## O que é provisionado
+## Componentes provisionados por esta configuração Terraform
 
 | Componente | Namespace | Uso |
 | --- | --- | --- |
@@ -22,6 +22,11 @@ pendentes.
 | Local Path Provisioner | `local-path-storage` | Volumes persistentes locais para o Kind |
 
 Cada serviço tem seu próprio namespace e instância de banco. Os serviços não devem acessar bancos de outros serviços; a integração ocorre por APIs ou eventos publicados no RabbitMQ. Os endpoints DNS internos estão disponíveis pela saída `database_endpoints`, `rabbitmq_endpoint` e `grafana_endpoint` do Terraform.
+
+Os recursos e endpoints AWS/EKS em uso são provisionados e operados fora desta
+configuração Terraform. Os nomes de recursos, região, rede, balanceamento,
+armazenamento e políticas específicas desse ambiente não são declarados aqui;
+consulte a configuração operacional AWS correspondente para esses detalhes.
 
 Os deployments dos serviços devem usar as credenciais provisionadas como Kubernetes Secrets, sem gravar senhas em manifestos:
 
@@ -104,12 +109,12 @@ pois a configuracao desse ambiente nao esta neste repositorio.
 
 ## CI e limites deste repositório
 
-O workflow `Validate infrastructure` formata e valida o Terraform, provisiona a infraestrutura em um cluster Kind efêmero e verifica que os recursos de mensageria e observabilidade ficam prontos. Os pipelines de build, testes, cobertura, análise de qualidade e deploy devem permanecer independentes nos repositórios de cada microsserviço.
+O workflow `Validate infrastructure` formata e valida o Terraform, provisiona a infraestrutura em um cluster Kind efêmero e verifica que os recursos de mensageria e observabilidade ficam prontos. Esse teste de Kind não substitui nem recria o ambiente AWS/EKS já provisionado e em uso. Os pipelines de build, testes, cobertura, análise de qualidade e deploy devem permanecer independentes nos repositórios de cada microsserviço.
 
 O check `Validar infraestrutura` é executado em todos os PRs e em pushes para
 `main` ou `feature/**`, sem filtro de arquivos. Configure no GitHub a proteção
 de `main` para exigir pull request e esse check após o workflow estar disponível
-no PR. O cluster Kind é temporário: essa validação não implanta infraestrutura em
-um ambiente Kubernetes externo nem substitui os deploys dos microsserviços.
+no PR. O cluster Kind é temporário e serve para validar a infraestrutura local;
+os deploys dos microsserviços no ambiente AWS/EKS são fluxos separados.
 
 Configure a proteção da branch `main` nas definições do GitHub para exigir pull request e o workflow de validação. Essa regra é configurada no GitHub e não pode ser aplicada pelo Terraform local deste repositório. As imagens dos microsserviços e seus manifestos não estão aqui porque dependem dos repositórios e nomes de imagem de cada serviço.

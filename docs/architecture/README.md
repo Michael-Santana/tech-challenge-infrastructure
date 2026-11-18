@@ -7,12 +7,17 @@ Este conjunto descreve o estado encontrado nas branches de trabalho dos reposito
 - `tech-challenge-execution-service` (`feature/execution`)
 - `tech-challenge-infrastructure` (`feature/infraestruture`)
 
-Os diagramas Mermaid podem ser visualizados no GitHub. Decisoes implementadas
-estao separadas de propostas ainda abertas; uma proposta nao representa
-configuracao existente nem decisao aprovada.
+Os diagramas Mermaid podem ser visualizados no GitHub. A arquitetura inclui o
+ambiente AWS/EKS provisionado e em uso, informado pelo responsavel pelo projeto;
+os detalhes de recursos AWS nao mantidos nestes repositorios nao sao presumidos.
+Decisoes implementadas estao separadas de propostas ainda abertas.
 
 ## Documentos
 
+- [Documentação arquitetural completa em PDF](architecture-complete.pdf):
+  visão, diagramas, modelo de dados, RFCs e ADRs.
+- [Resumo em PDF](architecture-overview.pdf): visão executiva diagramada,
+  derivada deste índice Markdown.
 - [Visao arquitetural e diagramas](architecture.md): componentes, contexto de
   infraestrutura, autenticacao como implementada e abertura de OS/Saga.
 - [Modelo de dados e justificativa](data-model.md): justificativa dos bancos,
@@ -26,12 +31,15 @@ configuracao existente nem decisao aprovada.
 |---|---|
 | Orquestracao distribuida | Saga coreografada por eventos RabbitMQ, com outbox nos servicos OS e Billing e eventos pendentes no documento de Execution. |
 | Bancos | PostgreSQL para OS e Billing; MongoDB para historico OS e estado/execucao. Bancos separados por servico. |
-| Nuvem/cluster | AWS escolhida como provedora-alvo; EKS e a opcao-alvo para Kubernetes. Ainda nao provisionado: Terraform cria Kind efemero para validacao e workflows esperam cluster externo via `KUBE_CONFIG`. |
+| Nuvem/cluster | AWS/EKS provisionado e em uso. O Terraform deste repositorio cria um Kind efemero para validacao; workflows de servico estao configurados para direcionar o deploy ao cluster externo via `KUBE_CONFIG` (execucao e secrets nao verificados nesta documentacao). |
 | Autenticacao | Billing protege `/budgets` por `X-API-Key`; webhook Mercado Pago valida assinatura. OS e Execution nao implementam autenticacao de usuario nas APIs examinadas. |
 | Monitoramento | Terraform instala kube-prometheus-stack. Billing tem anotacoes de scrape e Execution tem `ServiceMonitor`; cobertura de descoberta nao e uniforme. |
 | Autoscaling | HPA nao encontrado. Deployments estao em replicas fixas, com requests/limits parciais. |
 | Exposicao externa | Nao ha Ingress/Gateway nos manifests examinados. Os Services sao internos ao cluster. |
 
-Esta documentacao e baseada no codigo e manifestos dessas branches, nao declara
-que os workflows, clusters ou secrets externos estejam operacionais. Revalidar
-os documentos quando contratos, manifests ou decisoes forem alterados.
+Os detalhes de provisionamento, topologia, regiao, recursos gerenciados e
+operacao do ambiente AWS/EKS nao estao versionados nestes repositorios e devem
+ser mantidos na documentacao/configuracao operacional AWS. A existencia do
+cluster nao comprova, por si so, que workflows, secrets ou deploys estejam
+configurados ou operacionais. Revalidar os documentos quando contratos,
+manifests ou decisoes forem alterados.
